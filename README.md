@@ -39,9 +39,9 @@ python3 -m http.server 8080
 ```
 
 ### Option 2 — GitHub Pages
-Fork this repo and enable GitHub Pages. Your OS will be live at:
+Open my GitHub Pages link:
 ```
-https://yourusername.github.io/BrowserOS/BrowserOS.html
+https://jg-tech-aosp.github.io/BrowserOS/
 ```
 Storage will persist across sessions automatically since the origin is always the same URL.
 
