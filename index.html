@@ -776,7 +776,12 @@ const BROWSER_BEEP = JSON.stringify({
     "var bookmarks=loadJSON('/Documents/bookmarks.json',[]);",
     "var history=loadJSON('/Documents/history.json',[]);",
 
-    // ── Tab state ────────────────────────────────────────────────
+    "function resolveInput(v){",
+    "  if(!v)return null;",
+    "  if(v.startsWith('http'))return v;",
+    "  if(v.includes('.')&&!v.includes(' '))return 'https://'+v;",
+    "  return null;",
+    "}",
     "var tabs=[],activeTab=0;",
     "function makeTab(url){return{url:url||'',title:'New Tab',iframe:null,loading:false};}",
 
@@ -806,19 +811,16 @@ const BROWSER_BEEP = JSON.stringify({
 
     // ── Nav bar buttons ──────────────────────────────────────────
     "function mkBtn(t,title){var b=document.createElement('button');b.textContent=t;b.title=title||t;b.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text);min-width:28px;height:28px;padding:0 4px;font-size:14px;cursor:pointer;flex-shrink:0';return b;}",
-    "var backBtn=mkBtn('\u25c0','Back');",
-    "var fwdBtn=mkBtn('\u25b6','Forward');",
-    "var reloadBtn=mkBtn('\u27f3','Reload');",
     "var homeBtn=mkBtn('\u2302','New Tab');",
     "var urlInput=document.createElement('input');",
-    "urlInput.placeholder='Enter URL or search...';",
+    "urlInput.placeholder='Enter URL (e.g. example.com)...';",
     "urlInput.style.cssText='flex:1;background:var(--input-bg);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text);padding:4px 10px;font-size:13px;outline:none';",
     "var bookmarkBtn=mkBtn('\u2605','Bookmark this page');",
     "bookmarkBtn.style.color='#aaa';",
     "var histBtn=mkBtn('\ud83d\udcd6','History');",
     "var bmBtn=mkBtn('\ud83d\udccc','Bookmarks');",
     "var newTabBtn=mkBtn('+','New Tab');",
-    "[backBtn,fwdBtn,reloadBtn,homeBtn,urlInput,bookmarkBtn,histBtn,bmBtn,newTabBtn].forEach(function(b){navBar.appendChild(b);});",
+    "[homeBtn,urlInput,bookmarkBtn,histBtn,bmBtn,newTabBtn].forEach(function(b){navBar.appendChild(b);});",
 
     // ── Tab rendering ─────────────────────────────────────────────
     "function renderTabs(){",
@@ -873,13 +875,8 @@ const BROWSER_BEEP = JSON.stringify({
     "  urlInput.value='';renderTabs();",
     "  var page=document.createElement('div');",
     "  page.style.cssText='height:100%;overflow-y:auto;background:var(--win-bg);padding:32px;color:var(--text)';",
-    "  var searchWrap=document.createElement('div');searchWrap.style.cssText='max-width:500px;margin:0 auto 32px';",
-    "  var logo=document.createElement('div');logo.style.cssText='text-align:center;font-size:36px;margin-bottom:16px';logo.textContent='\uD83C\uDF10 Browser';",
-    "  var searchBox=document.createElement('input');",
-    "  searchBox.placeholder='Search DuckDuckGo or enter URL...';",
-    "  searchBox.style.cssText='width:100%;padding:10px 16px;border-radius:24px;border:1px solid rgba(255,255,255,0.15);background:var(--input-bg);color:var(--text);font-size:14px;outline:none';",
-    "  searchBox.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=searchBox.value.trim();if(!v)return;var u=v.startsWith('http')?v:(v.includes('.')?'https://'+v:'https://duckduckgo.com/?q='+encodeURIComponent(v));navigate(u);}});",
-    "  searchWrap.appendChild(logo);searchWrap.appendChild(searchBox);page.appendChild(searchWrap);",
+    "  var logo=document.createElement('div');logo.style.cssText='text-align:center;font-size:36px;margin-bottom:24px';logo.textContent='\uD83C\uDF10 Browser';",
+    "  page.appendChild(logo);",
 
     // Bookmarks section on new tab
     "  if(bookmarks.length){",
@@ -1025,9 +1022,6 @@ const BROWSER_BEEP = JSON.stringify({
     "}",
 
     // ── Wire up nav bar ───────────────────────────────────────────
-    "backBtn.onclick=function(){try{tabs[activeTab].iframe&&tabs[activeTab].iframe.contentWindow.history.back();}catch(e){}};",
-    "fwdBtn.onclick=function(){try{tabs[activeTab].iframe&&tabs[activeTab].iframe.contentWindow.history.forward();}catch(e){}};",
-    "reloadBtn.onclick=function(){var t=tabs[activeTab];if(t.iframe)t.iframe.src=t.iframe.src;};",
     "homeBtn.onclick=function(){closePanel();showNewTabPage();};",
     "bookmarkBtn.onclick=toggleBookmark;",
     "histBtn.onclick=function(){if(panel){closePanel();}else{showHistoryPanel();}};",
@@ -1037,8 +1031,8 @@ const BROWSER_BEEP = JSON.stringify({
     "  if(e.key!=='Enter')return;",
     "  closePanel();",
     "  var v=urlInput.value.trim();if(!v)return;",
-    "  var u=v.startsWith('http')?v:(v.includes('.')?'https://'+v:'https://duckduckgo.com/?q='+encodeURIComponent(v));",
-    "  navigate(u);",
+    "  var u=resolveInput(v);",
+    "  if(u)navigate(u);else BOS.notify('Enter a valid URL, e.g. example.com');",
     "});",
     "urlInput.addEventListener('focus',function(){urlInput.select();});",
 
@@ -1046,12 +1040,8 @@ const BROWSER_BEEP = JSON.stringify({
     "BOS.onContextMenu(function(x,y){",
     "  var u=tabs[activeTab]?tabs[activeTab].url:'';",
     "  BOS.showContextMenu(x,y,[",
-    "    {label:'\u25c0 Back',action:function(){backBtn.click();}},",
-    "    {label:'\u25b6 Forward',action:function(){fwdBtn.click();}},",
-    "    {label:'\u27f3 Reload',action:function(){reloadBtn.click();}},",
-    "    'sep',",
     "    {label:'\u2302 New Tab',action:function(){newTab('');}},",
-    "    {label:'\uD83C\uDF10 Navigate to...',action:function(){var u=prompt('URL:');if(u)navigate(u);}},",
+    "    {label:'\uD83C\uDF10 Navigate to...',action:function(){var u=prompt('URL (e.g. example.com):');if(u){var r=resolveInput(u);if(r)navigate(r);else BOS.notify('Invalid URL');}}},",
     "    'sep',",
     "    {label:'\u2605 '+(isBookmarked(u)?'Remove Bookmark':'Bookmark this page'),action:toggleBookmark},",
     "    {label:'\uD83D\uDCCC Bookmarks',action:function(){bmBtn.click();}},",
