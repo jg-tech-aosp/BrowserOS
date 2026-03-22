@@ -41,7 +41,7 @@ python3 -m http.server 8080
 ### Option 2 — GitHub Pages
 Open my GitHub Pages link:
 ```
-https://jg-tech-aosp.github.io/BrowserOS/
+https://jg-tech-aosp.github.io/browseros/
 ```
 Storage will persist across sessions automatically since the origin is always the same URL.
 
